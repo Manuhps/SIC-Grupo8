@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - JWT_SECRET=segredo_super_secreto
+    depends_on:
+      - auth-db
+    networks:
+      - sic-network
+
+  auth-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: auth_db
+    networks:
+      - sic-network
+
+  accommodation-service:
+    build: ./accommodation-service
+    ports:
+      - "3002:3002"
+    environment:
+      - JWT_SECRET=segredo_super_secreto
+    depends_on:
+      - accommodation-db
+    networks:
+      - sic-network
+  accommodation-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: accommodation_db
+    networks:
+      - sic-network
+
+  events-service:
+    build: ./events-service
+    ports:
+      - "3003:3003"
+    environment:
+      - JWT_SECRET=segredo_super_secreto
+    depends_on:
+      - events-db
+    networks:
+      - sic-network
+
+  events-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: events_db
+    networks:
+      - sic-network
+
+  reservation-service:
+    build: ./reservation-service
+    ports:
+      - "3004:3004"
+    environment:
+      - JWT_SECRET=segredo_super_secreto
+    depends_on:
+      - reservation-db
+    networks:
+      - sic-network
+
+  reservation-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: reservation_db
+    networks:
+      - sic-network
+
+  review-service:
+    build: ./review-service
+    ports:
+      - "3005:3005"
+    environment:
+      - JWT_SECRET=segredo_super_secreto
+    depends_on:
+      - review-db
+    networks:
+      - sic-network
+
+  review-db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: review_db
+    networks:
+      - sic-network
+
+networks:
+  sic-network:
+    driver: bridge
