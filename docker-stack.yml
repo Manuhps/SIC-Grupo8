@@ -1,14 +1,23 @@
 version: '3.8'
 
+# Docker Stack para Docker Swarm
+# NOTA: Este ficheiro usa 'image:' em vez de 'build:'
+# Para usar este ficheiro:
+# 1. Primeiro constrói as imagens: docker-compose build
+# 2. Faz tag das imagens: docker tag sic-projeto-grupo8_auth-service:latest auth-service:latest
+# 3. Deploy: docker stack deploy -c docker-stack.yml sic-stack
+
 services:
   auth-service:
-    build: ./auth-service
+    image: sic-projeto-grupo8_auth-service:latest
     ports:
       - "3001:3001"
     environment:
       - JWT_SECRET=segredo_super_secreto
-    depends_on:
-      - auth-db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
@@ -17,35 +26,48 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: auth_db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
   accommodation-service:
-    build: ./accommodation-service
+    image: sic-projeto-grupo8_accommodation-service:latest
     ports:
       - "3002:3002"
     environment:
       - JWT_SECRET=segredo_super_secreto
-    depends_on:
-      - accommodation-db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
+
   accommodation-db:
     image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: accommodation_db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
   events-service:
-    build: ./events-service
+    image: sic-projeto-grupo8_events-service:latest
     ports:
       - "3003:3003"
     environment:
       - JWT_SECRET=segredo_super_secreto
-    depends_on:
-      - events-db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
@@ -54,19 +76,24 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: events_db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
   reservation-service:
-    build: ./reservation-service
+    image: sic-projeto-grupo8_reservation-service:latest
     ports:
       - "3004:3004"
     environment:
       - JWT_SECRET=segredo_super_secreto
       - ACCOMMODATION_SERVICE_URL=http://accommodation-service:3002
-    depends_on:
-      - reservation-db
-      - accommodation-service
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
@@ -75,21 +102,25 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: reservation_db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
   review-service:
-    build: ./review-service
+    image: sic-projeto-grupo8_review-service:latest
     ports:
       - "3005:3005"
     environment:
       - JWT_SECRET=segredo_super_secreto
       - ACCOMMODATION_SERVICE_URL=http://accommodation-service:3002
       - EVENTS_SERVICE_URL=http://events-service:3003
-    depends_on:
-      - review-db
-      - accommodation-service
-      - events-service
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
@@ -98,9 +129,13 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: review_db
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
     networks:
       - sic-network
 
 networks:
   sic-network:
-    driver: bridge
+    driver: overlay

@@ -1,135 +1,72 @@
-const Alojamento = require('../models/alojamentoModel');
+const alojamentoService = require('../services/alojamentoService');
 
 const alojamentosController = {
     // Criar um novo alojamento
     createAlojamento: async (req, res) => {
         try {
-            const { nome, descricao, precoBase, zona, tipo, imagem } = req.body;
-            const proprietario_id = req.user.id;
-
-            if (!nome || !descricao || !precoBase || !zona || !tipo) {
-                return res.status(400).json({ mensagem: "Todos os campos são obrigatórios" });
-            }
-
-            const alojamento = await Alojamento.create({
-                nome,
-                descricao,
-                precoBase,
-                zona,
-                tipo,
-                imagem,
-                proprietario_id
-            });
-
+            const alojamento = await alojamentoService.create(req.body, req.user.id);
             res.status(201).json(alojamento);
         } catch (error) {
             console.error('Erro ao criar alojamento:', error);
-            res.status(500).json({ mensagem: "Erro ao criar alojamento" });
+            const status = error.status || 500;
+            const message = error.message || "Erro ao criar alojamento";
+            res.status(status).json({ mensagem: message });
         }
     },
 
     // Listar todos os alojamentos
     getAllAlojamentos: async (req, res) => {
         try {
-            const { page = 1, limit = 10 } = req.query;
-            const offset = (page - 1) * limit;
-
-            const alojamentos = await Alojamento.findAndCountAll({
-                limit: +limit,
-                offset: +offset
-            });
-
-            res.status(200).json({
-                total: alojamentos.count,
-                totalPages: Math.ceil(alojamentos.count / limit),
-                currentPage: +page,
-                data: alojamentos.rows
-            });
+            const pagination = {
+                page: req.query.page,
+                limit: req.query.limit
+            };
+            const result = await alojamentoService.getAll({}, pagination);
+            res.status(200).json(result);
         } catch (error) {
             console.error('Erro ao listar alojamentos:', error);
-            res.status(500).json({ mensagem: "Erro ao listar alojamentos" });
+            const status = error.status || 500;
+            const message = error.message || "Erro ao listar alojamentos";
+            res.status(status).json({ mensagem: message });
         }
     },
 
     // Obter um alojamento específico
     getAlojamentoById: async (req, res) => {
         try {
-            const alojamento = await Alojamento.findByPk(req.params.id);
-
-            if (!alojamento) {
-                return res.status(404).json({ mensagem: "Alojamento não encontrado" });
-            }
-
+            const alojamento = await alojamentoService.getById(req.params.id);
             res.status(200).json(alojamento);
         } catch (error) {
             console.error('Erro ao obter alojamento:', error);
-            res.status(500).json({ mensagem: "Erro ao obter alojamento" });
+            const status = error.status || 500;
+            const message = error.message || "Erro ao obter alojamento";
+            res.status(status).json({ mensagem: message });
         }
     },
 
     // Atualizar parcialmente um alojamento
     patchAlojamento: async (req, res) => {
         try {
-            const alojamento = await Alojamento.findByPk(req.params.id);
-            
-            if (!alojamento) {
-                return res.status(404).json({ mensagem: "Alojamento não encontrado" });
-            }
-
-            if (alojamento.proprietario_id !== req.user.id) {
-                return res.status(403).json({ mensagem: "Não autorizado" });
-            }
-
-            // Validação simples: se algum campo obrigatório for enviado, todos devem estar preenchidos e precoBase deve ser número
-            const camposObrigatorios = ['nome', 'descricao', 'precoBase', 'zona', 'tipo', 'imagem'];
-            if (camposObrigatorios.some(campo => req.body[campo] !== undefined)) {
-                for (const campo of camposObrigatorios) {
-                    if (req.body[campo] === undefined || req.body[campo] === null || req.body[campo] === "") {
-                        return res.status(400).json({ mensagem: `O campo '${campo}' não pode estar vazio` });
-                    }
-                }
-                if (isNaN(Number(req.body.precoBase))) {
-                    return res.status(400).json({ mensagem: "O campo 'precoBase' deve ser um número" });
-                }
-            }
-
-            // Atualiza apenas os campos enviados
-            const camposPermitidos = ['nome', 'descricao', 'precoBase', 'zona', 'tipo', 'imagem'];
-            const camposParaAtualizar = {};
-            
-            camposPermitidos.forEach(campo => {
-                if (req.body[campo] !== undefined) {
-                    camposParaAtualizar[campo] = req.body[campo];
-                }
-            });
-
-            await alojamento.update(camposParaAtualizar);
+            const alojamento = await alojamentoService.update(req.params.id, req.body, req.user.id);
             res.status(200).json(alojamento);
         } catch (error) {
             console.error('Erro ao atualizar alojamento:', error);
-            res.status(500).json({ mensagem: "Erro ao atualizar alojamento" });
+            const status = error.status || 500;
+            const message = error.message || "Erro ao atualizar alojamento";
+            res.status(status).json({ mensagem: message });
         }
     },
-
     
     // Excluir um alojamento
     deleteAlojamento: async (req, res) => {
         try {
-            const alojamento = await Alojamento.findByPk(req.params.id);
-            
-            if (!alojamento) {
-                return res.status(404).json({ mensagem: "Alojamento não encontrado" });
-            }
-
-            if (alojamento.proprietario_id !== req.user.id) {
-                return res.status(403).json({ mensagem: "Não autorizado" });
-            }
-
-            await alojamento.destroy();
-            res.status(200).json({ mensagem: "Alojamento apagado com sucesso" });
+            const result = await alojamentoService.delete(req.params.id, req.user.id);
+            res.status(200).json(result);
         } catch (error) {
             console.error('Erro ao excluir alojamento:', error);
-            res.status(500).json({ mensagem: "Erro ao excluir alojamento" });
+            const status = error.status || 500;
+            const message = error.message || "Erro ao excluir alojamento";
+            res.status(status).json({ mensagem: message });
         }
     }
 };
