@@ -1,2 +1,7 @@
 node_modules
 .env
+/controllers1
+/models1
+/routes1
+
+/*.md
