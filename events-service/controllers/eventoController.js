@@ -1,4 +1,5 @@
 const eventoService = require('../services/eventoService');
+const inscricaoService = require('../services/inscricaoService');
 
 const eventosController = {
     // Criar um novo evento
@@ -71,6 +72,33 @@ const eventosController = {
             const status = error.status || 500;
             const message = error.message || "Erro ao excluir evento";
             res.status(status).json({ mensagem: message });
+        }
+    },
+
+    // Inscrever-se em um evento (para estudantes)
+    inscreverEmEvento: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;
+
+            const inscricao = await inscricaoService.inscreverEmEvento(id, userId);
+
+            res.status(201).json({
+                message: "Inscrição efetuada com sucesso.",
+                inscricao: {
+                    status: inscricao.status,
+                    valor_pago: inscricao.valor_pago,
+                    user_id: inscricao.user_id,
+                    evento_id: inscricao.evento_id,
+                    updated_at: inscricao.updated_at,
+                    created_at: inscricao.created_at
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao inscrever-se no evento:', error);
+            const status = error.status || 500;
+            const message = error.message || "Ocorreu um erro. Por favor, tente novamente mais tarde.";
+            res.status(status).json({ errorMessage: message });
         }
     }
 };
