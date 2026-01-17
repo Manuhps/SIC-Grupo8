@@ -11,15 +11,26 @@ app.use(cors());
 // Usa as rotas de utilizador/autenticação
 app.use('/auth', userRoutes); 
 
-// Sincroniza a DB e inicia o servidor
-db.sync({ alter: true })
-    .then(() => {
-        console.log("Base de dados Auth conectada e sincronizada!");
-        app.listen(3001, () => {
-            console.log("Auth Service a correr na porta 3001");
-        });
-    })
-    .catch(err => {
-        console.error("Erro ao conectar:", err);
-    });
-
+// Função para tentar conectar à BD com retry
+async function connectDB() {
+    let retries = 10;
+    while (retries > 0) {
+        try {
+            await db.authenticate();
+            console.log("Base de dados conectada!");
+            await db.sync({ alter: true });
+            console.log("Base de dados sincronizada!");
+            app.listen(3001, () => {
+                console.log("A correr na porta 3001");
+            });
+            return;
+        } catch (err) {
+            retries--;
+            console.error(`Aguardando a base de dados... (tentativas restantes: ${retries}) ${err}`);
+            await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+        }
+    }
+    console.error("Erro ao conectar à base de dados após 10 tentativas");
+    process.exit(1);
+}
+connectDB();

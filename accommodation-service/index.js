@@ -9,6 +9,26 @@ app.use(cors());
 
 app.use('/accommodations', alojamentoRoutes);
 
-db.sync({ alter: true }).then(() => {
-    app.listen(3002, () => console.log("Accommodation Service na porta 3002"));
-});
+// Função para tentar conectar à BD com retry
+async function connectDB() {
+    let retries = 10;
+    while (retries > 0) {
+        try {
+            await db.authenticate();
+            console.log("Base de dados conectada!");
+            await db.sync({ alter: true });
+            console.log("Base de dados sincronizada!");
+            app.listen(3002, () => {
+                console.log("A correr na porta 3002");
+            });
+            return;
+        } catch (err) {
+            retries--;
+                console.error(`Aguardando a base de dados... (tentativas restantes: ${retries}) ${err}`);
+            await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+        }
+    }
+    console.error("Erro ao conectar à base de dados após 10 tentativas");
+    process.exit(1);
+}
+connectDB();
