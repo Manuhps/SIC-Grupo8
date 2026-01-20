@@ -34,7 +34,7 @@ const alojamentoService = {
         const alojamentos = await Alojamento.findAndCountAll({
             limit: +limit,
             offset: +offset,
-            order: [['created_at', 'DESC']]
+            order: [['createdAt', 'DESC']]
         });
 
         return {
