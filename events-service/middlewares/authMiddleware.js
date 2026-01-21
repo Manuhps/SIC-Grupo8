@@ -45,16 +45,6 @@ const authMiddleware = {
             });
         }
         next();
-    },
-
-    // Middleware para verificar se é Estudante
-    isEstudante: (req, res, next) => {
-        if (req.user.tipo !== 'estudante' && req.user.tipo !== 'admin') {
-            return res.status(403).json({ 
-                message: "Acesso negado. Apenas estudantes ou administradores podem aceder a este recurso." 
-            });
-        }
-        next();
     }
 };
 
