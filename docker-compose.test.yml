@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  events-service-test:
+    build:
+      context: ./events-service
+    environment:
+      - JWT_SECRET=test_secret
+    working_dir: /app
+    command: ["pytest", "-q"]
+    networks:
+      - sic-network
+
+networks:
+  sic-network:
+    external: false
