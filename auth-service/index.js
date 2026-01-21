@@ -3,34 +3,41 @@ const cors = require('cors');
 const db = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 
-const app = express();
+// Novos imports conforme a aula
+const pino = require('pino');
+const logger = pino({ transport: { target: "pino-pretty" } });
+const swaggerUi = require("swagger-ui-express");
+const swaggerFile = require("./swagger-output.json");
 
+const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Usa as rotas de utilizador/autenticação
-app.use('/auth', userRoutes); 
+// Swagger Page
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
-// Função para tentar conectar à BD com retry
+// Routes
+app.use('/auth', userRoutes);
+
 async function connectDB() {
-    let retries = 10;
+    let retries = 5;
     while (retries > 0) {
         try {
             await db.authenticate();
-            console.log("Base de dados conectada!");
+            logger.info("Base de dados conectada com sucesso!");
             await db.sync({ alter: true });
-            console.log("Base de dados sincronizada!");
             app.listen(3001, () => {
-                console.log("A correr na porta 3001");
+                logger.info("Auth Service a correr em http://localhost:3001");
+                logger.info("Documentação em http://localhost:3001/api-docs");
             });
             return;
         } catch (err) {
             retries--;
-            console.error(`Aguardando a base de dados... (tentativas restantes: ${retries}) ${err}`);
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+            logger.warn(`Conexão falhou. Tentativas restantes: ${retries}`);
+            await new Promise(res => setTimeout(res, 3000));
         }
     }
-    console.error("Erro ao conectar à base de dados após 10 tentativas");
-    process.exit(1);
+    logger.error("Não foi possível ligar à base de dados.");
 }
+
 connectDB();

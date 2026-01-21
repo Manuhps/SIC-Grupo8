@@ -1,40 +1,37 @@
 const authService = require('../services/authService');
+const pino = require('pino');
+const logger = pino({ transport: { target: "pino-pretty" } });
 
 const authController = {
-    // Login
     login: async (req, res) => {
         try {
             const { email, password } = req.body;
+            logger.info(`Tentativa de login: ${email}`); 
             const result = await authService.login(email, password);
+            logger.info(`Login bem sucedido por: ${email}`);
+        
             return res.status(200).json(result);
         } catch (error) {
-            console.error('Erro no login:', error);
+            logger.error(`Erro no login para ${req.body.email}: ${error.message}`); 
             const status = error.status || 500;
-            const message = error.message || "Ocorreu um erro durante o login.";
-            return res.status(status).json({ 
-                errorMessage: message,
-                details: error.details
-            });
+            return res.status(status).json({ errorMessage: error.message });
         }
     },
+    
 
-    // Registo
     register: async (req, res) => {
         try {
             const { username, email, password, tipo } = req.body;
+            logger.info(`Novo registo solicitado: ${email} (${tipo})`);
             const result = await authService.register(username, email, password, tipo);
+            logger.info(`Utilizador criado com ID: ${result.user.id}`);
             return res.status(201).json(result);
         } catch (error) {
-            console.error('Erro no registo:', error);
+            logger.error(`Erro no registo de ${req.body.email}: ${error.message}`);
             const status = error.status || 500;
-            const message = error.message || "Ocorreu um erro durante o registo.";
-            return res.status(status).json({ 
-                errorMessage: message,
-                details: error.details
-            });
+            return res.status(status).json({ errorMessage: error.message });
         }
     }
 };
 
 module.exports = authController;
-
