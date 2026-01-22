@@ -6,71 +6,49 @@ const jwt = require('jsonwebtoken');
 
 const db = require('./config/db');
 const alojamentoRoutes = require('./routes/alojamentoRoutes');
-const typeDefs = require('./graphql/typeDefs');
-const resolvers = require('./graphql/resolvers');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'segredo_super_secreto';
+const swaggerUi = require('swagger-ui-express');
+const swaggerFile = require('./swagger-output.json'); 
+const pino = require('pino');
+const logger = pino({ transport: { target: 'pino-pretty' } });
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Rotas REST existentes
+// Rota da Documentação Swagger
+app.use('/api-docs', swaggerUi.serve, (req, res) => {
+    delete require.cache[require.resolve('./swagger-output.json')];
+    const freshSwaggerFile = require('./swagger-output.json');
+    swaggerUi.setup(freshSwaggerFile)(req, res);
+}); 
+
 app.use('/accommodations', alojamentoRoutes);
 
-// Função para extrair user do token
-const getUser = (token) => {
-    if (!token) return null;
-    try {
-        // Remove "Bearer " se existir
-        const cleanToken = token.replace('Bearer ', '');
-        return jwt.verify(cleanToken, JWT_SECRET);
-    } catch (err) {
-        return null;
-    }
-};
-
-// Função para tentar conectar à BD com retry
+// Função de conexão original com Retry + Pino Logs
 async function connectDB() {
-    let retries = 10;
+    let retries = 5;
     while (retries > 0) {
         try {
             await db.authenticate();
-            console.log("Base de dados conectada!");
+            logger.info("Base de dados conectada com sucesso!");
+            
             await db.sync({ alter: true });
-            console.log("Base de dados sincronizada!");
+            logger.info("Base de dados sincronizada!");
             
-            // Configurar Apollo Server (GraphQL)
-            const apolloServer = new ApolloServer({
-                typeDefs,
-                resolvers,
-            });
-            
-            await apolloServer.start();
-            console.log("GraphQL Server iniciado!");
-            
-            // Middleware GraphQL com contexto de autenticação
-            app.use('/graphql', expressMiddleware(apolloServer, {
-                context: async ({ req }) => {
-                    const token = req.headers.authorization || '';
-                    const user = getUser(token);
-                    return { user };
-                }
-            }));
-            
-            app.listen(3002, () => {
-                console.log("A correr na porta 3002");
-                console.log("REST API: http://localhost:3002/accommodations");
-                console.log("GraphQL:  http://localhost:3002/graphql");
+            const PORT = 3002;
+            app.listen(PORT, () => {
+                logger.info(`Accommodation Service a correr em http://localhost:${PORT}`);
+                logger.info(`Documentação disponível em http://localhost:${PORT}/api-docs`);
             });
             return;
         } catch (err) {
             retries--;
-                console.error(`Aguardando a base de dados... (tentativas restantes: ${retries}) ${err}`);
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+            logger.warn(`Aguardando a base de dados... (tentativas restantes: ${retries})`);
+            await new Promise(resolve => setTimeout(resolve, 3000)); 
         }
     }
-    console.error("Erro ao conectar à base de dados após 10 tentativas");
+    logger.error("Erro: Não foi possível conectar à base de dados após 5 tentativas");
     process.exit(1);
 }
+
 connectDB();

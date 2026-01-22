@@ -1,5 +1,8 @@
 const express = require('express');
 const cors = require('cors');
+const pino = require('pino');
+const logger = pino({ transport: { target: "pino-pretty" } });
+const swaggerUi = require('swagger-ui-express');
 const db = require('./config/db');
 const avaliacaoRoutes = require('./routes/avaliacaoRoutes');
 
@@ -7,6 +10,13 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
+
+// Swagger Page
+app.use('/api-docs', swaggerUi.serve, (req, res) => {
+    delete require.cache[require.resolve('./swagger-output.json')];
+    const freshSwaggerFile = require('./swagger-output.json');
+    swaggerUi.setup(freshSwaggerFile)(req, res);
+});
 
 // Usa as rotas de avaliações
 app.use('/reviews', avaliacaoRoutes); 
@@ -17,20 +27,25 @@ async function connectDB() {
     while (retries > 0) {
         try {
             await db.authenticate();
-            console.log("Base de dados conectada!");
+            logger.info("Base de dados de Reviews conectada com sucesso!");
+            
             await db.sync({ alter: true });
-            console.log("Base de dados sincronizada!");
-            app.listen(3005, () => {
-                console.log("A correr na porta 3005");
+            logger.info("Base de dados de Reviews sincronizada!");
+            
+            const PORT = 3005;
+            app.listen(PORT, () => {
+                logger.info(`Review Service a correr em http://localhost:${PORT}`);
+                logger.info(`Documentação disponível em http://localhost:${PORT}/api-docs`);
             });
             return;
         } catch (err) {
             retries--;
-                    console.error(`Aguardando a base de dados... (tentativas restantes: ${retries}) ${err}`);
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+            logger.warn(`Aguardando a base de dados de Reviews... (tentativas restantes: ${retries})`);
+            await new Promise(resolve => setTimeout(resolve, 3000)); 
         }
     }
-    console.error("Erro ao conectar à base de dados após 10 tentativas");
+    logger.error("Erro Fatal: Não foi possível conectar à base de dados de Reviews");
     process.exit(1);
 }
+
 connectDB();
