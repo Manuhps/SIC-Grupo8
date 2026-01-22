@@ -1,5 +1,9 @@
 const express = require('express');
 const cors = require('cors');
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
+const jwt = require('jsonwebtoken');
+
 const db = require('./config/db');
 const alojamentoRoutes = require('./routes/alojamentoRoutes');
 const swaggerUi = require('swagger-ui-express');
