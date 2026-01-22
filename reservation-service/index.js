@@ -1,36 +1,56 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const pino = require('pino');
+const logger = pino({ transport: { target: "pino-pretty" } });
+const swaggerUi = require('swagger-ui-express');
 const db = require('./config/db');
 const reservaRoutes = require('./routes/reservaRoutes');
 
 const app = express();
-
 app.use(express.json());
 app.use(cors());
 
-// Usa as rotas de reservas
-app.use('/reservations', reservaRoutes); 
+// Swagger Page
+app.use('/api-docs', swaggerUi.serve, (req, res) => {
+    delete require.cache[require.resolve('./swagger-output.json')];
+    const freshSwaggerFile = require('./swagger-output.json');
+    swaggerUi.setup(freshSwaggerFile)(req, res);
+});
 
-// Função para tentar conectar à BD com retry
+// Rotas do Serviço
+app.use('/reservations', reservaRoutes);
+
+// Função de conexão com a Base de Dados (Retry Logic)
 async function connectDB() {
-    let retries = 10;
+    let retries = 5;
     while (retries > 0) {
         try {
+            // Tenta autenticar com o host 'reservation-db' definido no docker-compose
             await db.authenticate();
-            console.log("Base de dados conectada!");
+            logger.info("Base de dados de Reservas conectada com sucesso!");
+            
+            // Sincroniza os modelos (cria as tabelas se não existirem)
             await db.sync({ alter: true });
-            console.log("Base de dados sincronizada!");
-            app.listen(3004, () => {
-                console.log("A correr na porta 3004");
+            logger.info("Base de dados de Reservas sincronizada!");
+            
+            const PORT = 3004;
+            app.listen(PORT, () => {
+                logger.info(`Reservation Service a correr em http://localhost:${PORT}`);
+                logger.info(`Documentação disponível em http://localhost:${PORT}/api-docs`);
             });
             return;
         } catch (err) {
             retries--;
-            console.error(`Aguardando a base de dados... (tentativas restantes: ${retries}) ${err}`);
-            await new Promise(resolve => setTimeout(resolve, 3000)); // Aguarda 3 segundos
+            logger.warn(`Aguardando a base de dados de Reservas... (tentativas restantes: ${retries})`);
+            // Espera 3 segundos antes de tentar novamente
+            await new Promise(resolve => setTimeout(resolve, 3000)); 
         }
     }
-    console.error("Erro ao conectar à base de dados após 10 tentativas");
+    
+    logger.error("Erro Fatal: Não foi possível conectar à base de dados de Reservas após 5 tentativas");
     process.exit(1);
 }
+
+// Iniciar a aplicação
 connectDB();
