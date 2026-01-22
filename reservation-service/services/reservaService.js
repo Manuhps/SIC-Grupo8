@@ -109,7 +109,7 @@ const reservaService = {
 
     // Criar uma nova reserva
     create: async (data, userId) => {
-        const { alojamento_id, data_inicio, data_fim, total_preco } = data;
+        const { alojamento_id, data_inicio, data_fim } = data;
 
         // Validações
         if (!alojamento_id || !data_inicio || !data_fim) {
@@ -139,6 +139,12 @@ const reservaService = {
                 message: "A data de início não pode ser no passado" 
             };
         }
+
+        // Calcular número de dias e preço total automaticamente
+        const diffTime = Math.abs(fim - inicio);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const precoBase = alojamento.precoBase || 0;
+        const total_preco = diffDays * precoBase;
 
         // Verificar sobreposição de reservas (para o mesmo alojamento)
         const reservasExistentes = await Reserva.findAll({
@@ -180,13 +186,19 @@ const reservaService = {
             user_id: userId,
             data_inicio,
             data_fim,
-            total_preco: total_preco || null,
+            total_preco, // Calculado automaticamente
             status: 'pendente'
         });
 
         return {
             message: "Reserva criada com sucesso.",
-            reserva
+            reserva,
+            detalhes: {
+                alojamento: alojamento.nome,
+                preco_por_noite: precoBase,
+                noites: diffDays,
+                total: total_preco
+            }
         };
     },
 

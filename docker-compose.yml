@@ -8,7 +8,8 @@ services:
     environment:
       - JWT_SECRET=segredo_super_secreto
     depends_on:
-      - auth-db
+      auth-db:
+        condition: service_healthy
     networks:
       - sic-network
 
@@ -19,6 +20,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: auth_db
+    volumes:
+      - auth-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - sic-network
 
@@ -29,14 +38,24 @@ services:
     environment:
       - JWT_SECRET=segredo_super_secreto
     depends_on:
-      - accommodation-db
+      accommodation-db:
+        condition: service_healthy
     networks:
       - sic-network
+
   accommodation-db:
     image: mysql:5.7
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: accommodation_db
+    volumes:
+      - accommodation-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - sic-network
 
@@ -47,7 +66,8 @@ services:
     environment:
       - JWT_SECRET=segredo_super_secreto
     depends_on:
-      - events-db
+      events-db:
+        condition: service_healthy
     networks:
       - sic-network
 
@@ -56,6 +76,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: events_db
+    volumes:
+      - events-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - sic-network
 
@@ -67,8 +95,10 @@ services:
       - JWT_SECRET=segredo_super_secreto
       - ACCOMMODATION_SERVICE_URL=http://accommodation-service:3002
     depends_on:
-      - reservation-db
-      - accommodation-service
+      reservation-db:
+        condition: service_healthy
+      accommodation-service:
+        condition: service_started
     networks:
       - sic-network
 
@@ -77,6 +107,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: reservation_db
+    volumes:
+      - reservation-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - sic-network
 
@@ -89,9 +127,12 @@ services:
       - ACCOMMODATION_SERVICE_URL=http://accommodation-service:3002
       - EVENTS_SERVICE_URL=http://events-service:3003
     depends_on:
-      - review-db
-      - accommodation-service
-      - events-service
+      review-db:
+        condition: service_healthy
+      accommodation-service:
+        condition: service_started
+      events-service:
+        condition: service_started
     networks:
       - sic-network
 
@@ -100,9 +141,24 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: review_db
+    volumes:
+      - review-db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - sic-network
 
 networks:
   sic-network:
     driver: bridge
+
+volumes:
+  auth-db-data:
+  accommodation-db-data:
+  events-db-data:
+  reservation-db-data:
+  review-db-data:
