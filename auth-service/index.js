@@ -2,8 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
-
-// Novos imports conforme a aula
 const pino = require('pino');
 const logger = pino({ transport: { target: "pino-pretty" } });
 const swaggerUi = require("swagger-ui-express");
@@ -14,7 +12,11 @@ app.use(express.json());
 app.use(cors());
 
 // Swagger Page
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.use('/api-docs', swaggerUi.serve, (req, res) => {
+    delete require.cache[require.resolve('./swagger-output.json')];
+    const freshSwaggerFile = require('./swagger-output.json');
+    swaggerUi.setup(freshSwaggerFile)(req, res);
+});
 
 // Routes
 app.use('/auth', userRoutes);
