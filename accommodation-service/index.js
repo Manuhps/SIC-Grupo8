@@ -11,6 +11,12 @@ const swaggerFile = require('./swagger-output.json');
 const pino = require('pino');
 const logger = pino({ transport: { target: 'pino-pretty' } });
 
+// GraphQL imports
+const typeDefs = require('./graphql/schema');
+const resolvers = require('./graphql/resolvers');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'segredo_super_secreto';
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -24,7 +30,19 @@ app.use('/api-docs', swaggerUi.serve, (req, res) => {
 
 app.use('/accommodations', alojamentoRoutes);
 
-// Função de conexão original com Retry + Pino Logs
+// Função para extrair user do token JWT
+const getUser = (token) => {
+    if (!token) return null;
+    try {
+        const tokenClean = token.replace('Bearer ', '');
+        const decoded = jwt.verify(tokenClean, JWT_SECRET);
+        return decoded;
+    } catch (err) {
+        return null;
+    }
+};
+
+// Função de conexão com GraphQL
 async function connectDB() {
     let retries = 5;
     while (retries > 0) {
@@ -35,15 +53,35 @@ async function connectDB() {
             await db.sync({ alter: true });
             logger.info("Base de dados sincronizada!");
             
+            // Inicializar Apollo Server (GraphQL)
+            const apolloServer = new ApolloServer({
+                typeDefs,
+                resolvers,
+            });
+            
+            await apolloServer.start();
+            logger.info("Apollo Server (GraphQL) iniciado!");
+            
+            // Adicionar endpoint GraphQL
+            app.use('/graphql', expressMiddleware(apolloServer, {
+                context: async ({ req }) => {
+                    const token = req.headers.authorization || '';
+                    const user = getUser(token);
+                    return { user };
+                }
+            }));
+            
             const PORT = 3002;
             app.listen(PORT, () => {
                 logger.info(`Accommodation Service a correr em http://localhost:${PORT}`);
-                logger.info(`Documentação disponível em http://localhost:${PORT}/api-docs`);
+                logger.info(`REST API: http://localhost:${PORT}/accommodations`);
+                logger.info(`GraphQL: http://localhost:${PORT}/graphql`);
+                logger.info(`Swagger: http://localhost:${PORT}/api-docs`);
             });
             return;
         } catch (err) {
             retries--;
-            logger.warn(`Aguardando a base de dados... (tentativas restantes: ${retries})`);
+            logger.warn(`Aguardando a base de dados... (tentativas restantes: ${retries}) - Erro: ${err.message}`);
             await new Promise(resolve => setTimeout(resolve, 3000)); 
         }
     }
