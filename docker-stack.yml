@@ -19,7 +19,7 @@ services:
       - DB_USER=root
       - DB_PASSWORD=root
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -31,7 +31,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: auth_db
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -48,7 +48,7 @@ services:
       - DB_USER=root
       - DB_PASSWORD=root
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -60,7 +60,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: accommodation_db
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -73,7 +73,7 @@ services:
     environment:
       - JWT_SECRET=segredo_super_secreto
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -85,7 +85,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: events_db
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -103,7 +103,7 @@ services:
       - DB_PASSWORD=root
       - ACCOMMODATION_SERVICE_URL=http://accommodation-service:3002
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -115,7 +115,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: reservation_db
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -134,7 +134,7 @@ services:
       - ACCOMMODATION_SERVICE_URL=http://accommodation-service:3002
       - EVENTS_SERVICE_URL=http://events-service:3003
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -146,7 +146,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: review_db
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
@@ -165,7 +165,7 @@ services:
       - reservation-service
       - review-service
     deploy:
-      replicas: 2
+      replicas: 1
       restart_policy:
         condition: on-failure
     networks:
