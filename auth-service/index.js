@@ -23,6 +23,7 @@ app.use('/auth', userRoutes);
 
 async function connectDB() {
     let retries = 5;
+    let delay = 5000; // 5 segundos
     while (retries > 0) {
         try {
             await db.authenticate();

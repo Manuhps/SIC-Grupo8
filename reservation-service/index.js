@@ -24,6 +24,7 @@ app.use('/reservations', reservaRoutes);
 // Função de conexão com a Base de Dados (Retry Logic)
 async function connectDB() {
     let retries = 5;
+    let delay = 5000; // 5 segundos 
     while (retries > 0) {
         try {
             // Tenta autenticar com o host 'reservation-db' definido no docker-compose

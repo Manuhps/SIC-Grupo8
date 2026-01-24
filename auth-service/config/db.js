@@ -1,11 +1,15 @@
 const { Sequelize } = require('sequelize');
 
-// 'auth-db' é o nome do container MySQL definido no docker-compose
-// Usa variável de ambiente ou 'auth-db' para Docker, 'localhost' para desenvolvimento local
-const sequelize = new Sequelize('auth_db', 'root', 'root', {
-    host: 'auth-db',
-    dialect: 'mysql',
-    logging: false
-});
+const sequelize = new Sequelize(
+    process.env.DB_NAME || 'auth_db',
+    process.env.DB_USER || 'root',
+    process.env.DB_PASSWORD || 'root',
+    {
+        host: process.env.DB_HOST || 'auth-db',
+        port: process.env.DB_PORT || 3306,
+        dialect: 'mysql',
+        logging: console.log // Ativa logs para debugging
+    }
+);
 
 module.exports = sequelize;
