@@ -24,6 +24,7 @@ app.use('/reviews', avaliacaoRoutes);
 // Função para tentar conectar à BD com retry
 async function connectDB() {
     let retries = 10;
+    let delay = 5000; // 5 segundos
     while (retries > 0) {
         try {
             await db.authenticate();
